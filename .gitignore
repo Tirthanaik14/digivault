@@ -1,0 +1,26 @@
+# Python venvs
+backend/venv/
+backend/web3_venv/
+web3_venv/
+
+# Python cache
+backend/__pycache__/
+backend/**/__pycache__/
+**/__pycache__/
+**/*.pyc
+
+# Node
+frontend/kyc_aml/node_modules/
+frontend/kyc_aml/dist/
+frontend/kyc_aml/.env
+
+# Env files
+backend/.env
+.env
+
+# General
+.DS_Store
+*.log
+
+# Blockchain node_modules
+backend/blockchain/node_modules/
