@@ -27,7 +27,7 @@ export const PORTALS = [
     sections: [
       { id: "dashboard", label: "Dashboard",     icon: LayoutDashboard },
       { id: "kyc",       label: "KYC Center",    icon: Fingerprint     },
-      { id: "aml",       label: "AML Simulator", icon: Activity        },
+      { id: "aml",       label: "Transactions", icon: Activity        },
     ],
   },
   {
@@ -48,7 +48,7 @@ export const PORTALS = [
     color: "amber",
     sections: [
       { id: "network",      label: "Network Overview", icon: Globe    },
-      { id: "institutions", label: "Institution Mgmt", icon: BookOpen },
+      { id: "institutions", label: "Institution Management", icon: BookOpen },
     ],
   },
 ];

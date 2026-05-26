@@ -15,6 +15,8 @@ logger = logging.getLogger(__name__)
 router = APIRouter(tags=["aml"])
 
 
+# app/api/routes/aml.py
+
 @router.post("/api/simulate-txn")
 def simulate_transaction(
     payload: dict,
@@ -32,6 +34,15 @@ def simulate_transaction(
         raise HTTPException(400, detail="receiver_name is required.")
     if not account_number:
         raise HTTPException(400, detail="account_number is required.")
+
+    # 🔒 NEW SECURITY BLOCK: Enforce KYC Verification
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise HTTPException(404, detail="User not found.")
+    if user.kyc_status != "VERIFIED":
+        raise HTTPException(403, detail="Transaction Blocked: KYC verification is incomplete or pending analyst review.")
+
+    # ... keep the rest of your code (Load history, Score with Random Forest, etc.) exactly the same ...
 
     # Load history
     history = (

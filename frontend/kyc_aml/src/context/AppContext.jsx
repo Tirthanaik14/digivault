@@ -58,11 +58,19 @@ export function AppProvider({ children }) {
   }
 
   // ── Fetch dashboard data when user logs in ────────────────────────────────
+  // ── Fetch dashboard data when user logs in ────────────────────────────────
   useEffect(() => {
     if (isLoggedIn && currentUser?.role === "user") {
       api.getDashboard()
         .then((data) => {
           setDashboardData(data);
+          
+          // NEW: Dynamically inject the live KYC status into the currentUser object!
+          // This ensures the AML Simulator unlocks instantly without needing a re-login.
+          if (data.kyc_status) {
+            setCurrentUser(prev => ({ ...prev, kyc_status: data.kyc_status }));
+          }
+
           // Derive kycStep from the 5 booleans
           const steps = data.kyc_steps;
           const stepValues = [
@@ -79,7 +87,6 @@ export function AppProvider({ children }) {
         .catch(() => {}); // silently fail if not logged in yet
     }
   }, [isLoggedIn]);
-
   // ── Convenience: switch portal ────────────────────────────────────────────
   function switchPortal(portalId) {
     const portal = PORTALS.find((p) => p.id === portalId);

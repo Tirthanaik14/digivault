@@ -1,9 +1,9 @@
 // src/components/portals/user/AMLSimulator.jsx
 // Wired to POST /api/simulate-txn + GET /api/transactions
-// Keeps your existing table/form UI style exactly, with GPay real-time validation added
+// Features: Real-time ledger, GPay inline validation, KYC enforcement, smart history routing
 
 import { useState, useEffect } from "react";
-import { User, CreditCard, DollarSign, Zap, Loader2, RefreshCw, Wallet, AlertCircle } from "lucide-react";
+import { User, CreditCard, DollarSign, Zap, Loader2, RefreshCw, Wallet, AlertCircle, Lock } from "lucide-react";
 import { Panel, SectionHeader, Badge } from "../../shared";
 import { api } from "../../../utils/api";
 import { useApp } from "../../../context/AppContext";
@@ -46,13 +46,12 @@ export default function AMLSimulator() {
       let currentBalance = 1000000;
       if (data.transactions) {
         data.transactions.forEach(t => {
-          // Check if transaction was approved or safe
           if (t.status === "APPROVED" || t.is_flagged === false) {
-            // If the account number matches mine, I RECEIVED money
+            // Incoming money
             if (t.account_number === myAccountNumber) {
               currentBalance += parseFloat(t.amount);
             } 
-            // If I was the sender, I SENT money, so subtract it
+            // Outgoing money
             else if (t.sender_id === currentUser.user_id) {
               currentBalance -= parseFloat(t.amount);
             }
@@ -149,57 +148,71 @@ export default function AMLSimulator() {
         </div>
       </div>
 
-      {/* Form */}
-      <Panel>
-        <SectionHeader title="New Transaction" />
-        <div className="grid grid-cols-3 gap-6">
-          {FORM_FIELDS.map(({ key, label, placeholder, icon: Icon, type }) => (
-            <div key={key} className="relative">
-              <label className="text-slate-400 text-xs font-mono uppercase tracking-wider mb-2 block">
-                {label}
-              </label>
-              <div className="relative">
-                <Icon size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 ${errors[key] ? "text-rose-500" : "text-slate-500"}`} />
-                <input
-                  type={type}
-                  placeholder={placeholder}
-                  value={form[key]}
-                  onChange={(e) => handleInputChange(key, e.target.value)}
-                  className={`w-full bg-slate-900 border rounded-xl pl-9 pr-4 py-3 text-white text-sm focus:outline-none focus:ring-2 transition-all font-mono ${
-                    errors[key] 
-                      ? "border-rose-500/50 focus:border-rose-500 focus:ring-rose-500/20" 
-                      : "border-slate-700 focus:border-emerald-500 focus:ring-emerald-500/10"
-                  }`}
-                />
-              </div>
-              {/* GPay style inline error message */}
-              {errors[key] && (
-                <div className="absolute -bottom-5 left-0 flex items-center gap-1 text-rose-400 mt-1">
-                  <AlertCircle size={10} />
-                  <span className="text-[10px] font-mono">{errors[key]}</span>
+      {/* KYC Conditional Form Rendering */}
+      {currentUser?.kyc_status === "VERIFIED" ? (
+        <Panel>
+          <SectionHeader title="New Transaction" />
+          <div className="grid grid-cols-3 gap-6">
+            {FORM_FIELDS.map(({ key, label, placeholder, icon: Icon, type }) => (
+              <div key={key} className="relative">
+                <label className="text-slate-400 text-xs font-mono uppercase tracking-wider mb-2 block">
+                  {label}
+                </label>
+                <div className="relative">
+                  <Icon size={14} className={`absolute left-3 top-1/2 -translate-y-1/2 ${errors[key] ? "text-rose-500" : "text-slate-500"}`} />
+                  <input
+                    type={type}
+                    placeholder={placeholder}
+                    value={form[key]}
+                    onChange={(e) => handleInputChange(key, e.target.value)}
+                    className={`w-full bg-slate-900 border rounded-xl pl-9 pr-4 py-3 text-white text-sm focus:outline-none focus:ring-2 transition-all font-mono ${
+                      errors[key] 
+                        ? "border-rose-500/50 focus:border-rose-500 focus:ring-rose-500/20" 
+                        : "border-slate-700 focus:border-emerald-500 focus:ring-emerald-500/10"
+                    }`}
+                  />
                 </div>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {serverError && (
-          <div className="mt-8 bg-rose-500/10 border border-rose-500/20 text-rose-400 px-4 py-2 rounded-lg text-xs font-mono">
-            {serverError}
+                {/* GPay style inline error message */}
+                {errors[key] && (
+                  <div className="absolute -bottom-5 left-0 flex items-center gap-1 text-rose-400 mt-1">
+                    <AlertCircle size={10} />
+                    <span className="text-[10px] font-mono">{errors[key]}</span>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        )}
 
-        <button
-          onClick={handleSubmit}
-          disabled={!isFormValid || submitting}
-          className="mt-8 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:hover:bg-emerald-500 text-white rounded-xl text-sm font-mono transition-all flex items-center gap-2 group"
-        >
-          {submitting
-            ? <><Loader2 size={14} className="animate-spin" /> Processing...</>
-            : <><Zap size={14} className={`${isFormValid ? "group-hover:animate-bounce" : ""}`} /> Pay Securely</>
-          }
-        </button>
-      </Panel>
+          {serverError && (
+            <div className="mt-8 bg-rose-500/10 border border-rose-500/20 text-rose-400 px-4 py-2 rounded-lg text-xs font-mono">
+              {serverError}
+            </div>
+          )}
+
+          <button
+            onClick={handleSubmit}
+            disabled={!isFormValid || submitting}
+            className="mt-8 px-6 py-3 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:hover:bg-emerald-500 text-white rounded-xl text-sm font-mono transition-all flex items-center gap-2 group"
+          >
+            {submitting
+              ? <><Loader2 size={14} className="animate-spin" /> Processing...</>
+              : <><Zap size={14} className={`${isFormValid ? "group-hover:animate-bounce" : ""}`} /> Pay Securely</>
+            }
+          </button>
+        </Panel>
+      ) : (
+        <Panel>
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <div className="bg-slate-800 p-4 rounded-full mb-4">
+              <Lock size={32} className="text-slate-500" />
+            </div>
+            <h3 className="text-white text-lg font-bold mb-2">Account Restricted</h3>
+            <p className="text-slate-400 text-sm max-w-md">
+              Transactions are currently locked. You must complete your biometric KYC verification and receive Analyst approval before sending funds.
+            </p>
+          </div>
+        </Panel>
+      )}
 
       {/* History table */}
       <Panel>
@@ -229,6 +242,7 @@ export default function AMLSimulator() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-slate-700">
+                  {/* Updated Header: Receiver -> Party */}
                   {["Txn ID", "Party", "Account", "Amount", "AML Score", "Status", "Time"].map((h) => (
                     <th key={h} className="text-left text-xs font-mono uppercase tracking-wider text-slate-500 pb-3 pr-4">
                       {h}
@@ -246,6 +260,7 @@ export default function AMLSimulator() {
                       #{t.transaction_id}
                     </td>
                     <td className="py-3 pr-4 text-white text-sm font-medium truncate max-w-[120px]">
+                      {/* Smart Party Display: Shows Sender if incoming, Receiver if outgoing */}
                       {t.account_number === myAccountNumber ? t.sender_name : t.receiver_name}
                     </td>
                     <td className="py-3 pr-4 text-slate-400 text-xs font-mono">
